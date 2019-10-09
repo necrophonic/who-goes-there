@@ -1,10 +1,12 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"os"
 
 	"github.com/ONSdigital/who-goes-there/pkg/github"
+	"github.com/davecgh/go-spew/spew"
 )
 
 func main() {
@@ -17,14 +19,21 @@ func main() {
 		log.Fatal("Missing API_TOKEN env var")
 	}
 
-	organisationName := ""
-	if organisationName = os.Getenv("GITHUB_ORG_NAME"); len(organisationName) == 0 {
+	organisation := ""
+	if organisation = os.Getenv("GITHUB_ORG_NAME"); len(organisation) == 0 {
 		log.Fatal("Missing GITHUB_ORG_NAME")
 	}
 
+	repository := ""
+	if repository = os.Getenv("REPOSITORY"); len(repository) == 0 {
+		log.Fatal("Missing REPOSITORY")
+	}
+
+	fmt.Printf("Org: %s\nRepo: %s\n", organisation, repository)
+
 	client := github.NewClient(token)
 
-	users, err := client.FetchOrganizationMembers(organisationName)
+	users, err := client.FetchOrganizationMembers(organisation)
 	if err != nil {
 		log.Fatalf("Failed to retrieve members: %v", err)
 	}
@@ -49,5 +58,11 @@ func main() {
 	log.Println("Users with MFA:", hasMFA)
 	log.Println("Admin users:", isAdmin)
 	log.Println("Bad admin:", badAdmin)
+
+	issues, err := client.FetchAllOpenIssues(organisation, repository)
+	if err != nil {
+		log.Fatalf("Failed to retrieve issues: %v", err)
+	}
+	spew.Dump(issues)
 
 }

@@ -1,9 +1,6 @@
 package github
 
 import (
-	"context"
-	"log"
-
 	"github.com/machinebox/graphql"
 	"github.com/pkg/errors"
 )
@@ -19,14 +16,6 @@ type (
 		}
 	}
 
-	// PageInfo represents the pagination information returned from the query
-	PageInfo struct {
-		EndCursor       string
-		HasNextPage     bool
-		HasPreviousPage bool
-		StartCursor     string
-	}
-
 	// User represents the information returned for a specific user
 	User struct {
 		HasTwoFactorEnabled bool
@@ -36,10 +25,6 @@ type (
 			Login string
 		}
 	}
-
-	organizationResponse struct {
-		Organization Organization
-	}
 )
 
 // FetchOrganizationMembers performs a graphql query to fetch the member information
@@ -47,7 +32,7 @@ type (
 func (c *Client) FetchOrganizationMembers(org string) ([]User, error) {
 
 	var users []User
-	var next *string // Allow it to be nil\
+	var next *string // Allow it to be nil
 
 	req := graphql.NewRequest(`
 	query($organization: String!, $after: String) {
@@ -70,25 +55,21 @@ func (c *Client) FetchOrganizationMembers(org string) ([]User, error) {
 		}
 	}`)
 	req.Var("organization", org)
-	req.Header.Set("Authorization", "bearer "+c.token)
 
 	page := 0
-	for {
+	hasNextPage := true
+	for hasNextPage {
 		page++
-		log.Printf("Fetch page %d", page)
-		res := &organizationResponse{}
+		res := &struct{ Organization Organization }{}
 
 		req.Var("after", next)
 
-		if err := c.client.Run(context.Background(), req, &res); err != nil {
+		if err := c.Run(req, &res); err != nil {
 			return nil, errors.Wrap(err, "failed to fetch members for organisation")
 		}
 		users = append(users, res.Organization.MembersWithRole.Edges...)
 		next = &res.Organization.MembersWithRole.PageInfo.EndCursor
-
-		if next == nil || *next == "" {
-			break
-		}
+		hasNextPage = res.Organization.MembersWithRole.PageInfo.HasNextPage
 	}
 
 	return users, nil
