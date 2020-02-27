@@ -7,6 +7,12 @@ import (
 
 	"github.com/ONSdigital/who-goes-there/pkg/github"
 	"github.com/davecgh/go-spew/spew"
+	"github.com/urfave/cli/v2"
+)
+
+var (
+	// Version is set by build flags
+	Version = "0.0.0"
 )
 
 func main() {
@@ -14,20 +20,72 @@ func main() {
 	// - Github API token
 	// - Organisation name
 	//
-	token := ""
-	if token = os.Getenv("API_TOKEN"); len(token) == 0 {
-		log.Fatal("Missing API_TOKEN env var")
+	app := &cli.App{
+		Name:    "who",
+		Version: Version,
+		Usage:   "cli interface for running Who Goes There",
+		Flags: []cli.Flag{
+			&cli.StringFlag{
+				Name:     "token",
+				Aliases:  []string{"t"},
+				Usage:    "github token for connecting to api",
+				EnvVars:  []string{"API_TOKEN"},
+				Required: true,
+			},
+			&cli.StringFlag{
+				Name:     "org",
+				Aliases:  []string{"o"},
+				Usage:    "github organisation",
+				EnvVars:  []string{"GITHUB_ORG_NAME"},
+				Required: true,
+			},
+			&cli.StringFlag{
+				Name:     "repo",
+				Aliases:  []string{"r"},
+				Usage:    "repository for compliance issues",
+				EnvVars:  []string{"REPOSITORY"},
+				Required: true,
+			},
+		},
+		Commands: []*cli.Command{
+			{
+				Name:   "run",
+				Usage:  "run basic report",
+				Action: runCommand,
+			},
+		},
 	}
 
-	organisation := ""
-	if organisation = os.Getenv("GITHUB_ORG_NAME"); len(organisation) == 0 {
-		log.Fatal("Missing GITHUB_ORG_NAME")
+	err := app.Run(os.Args)
+	if err != nil {
+		log.Fatal(err)
 	}
 
-	repository := ""
-	if repository = os.Getenv("REPOSITORY"); len(repository) == 0 {
-		log.Fatal("Missing REPOSITORY")
-	}
+}
+
+func runCommand(c *cli.Context) error {
+
+	token := c.String("token")
+	organisation := c.String("org")
+	repository := c.String("repo")
+
+	// token := ""
+	// if token = os.Getenv("API_TOKEN"); len(token) == 0 {
+	// 	fmt.Println("Missing API_TOKEN env var")
+	// 	os.Exit(1)
+	// }
+
+	// organisation := ""
+	// if organisation = os.Getenv("GITHUB_ORG_NAME"); len(organisation) == 0 {
+	// 	fmt.Println("Missing GITHUB_ORG_NAME")
+	// 	os.Exit(1)
+	// }
+
+	// repository := ""
+	// if repository = os.Getenv("REPOSITORY"); len(repository) == 0 {
+	// 	fmt.Println("Missing REPOSITORY")
+	// 	os.Exit(1)
+	// }
 
 	fmt.Printf("Org: %s\nRepo: %s\n", organisation, repository)
 
@@ -65,4 +123,5 @@ func main() {
 	}
 	spew.Dump(issues)
 
+	return nil
 }

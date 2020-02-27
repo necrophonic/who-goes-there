@@ -2,6 +2,7 @@ package github
 
 import (
 	"github.com/machinebox/graphql"
+
 	"github.com/pkg/errors"
 )
 
@@ -60,13 +61,16 @@ func (c *Client) FetchOrganizationMembers(org string) ([]User, error) {
 	hasNextPage := true
 	for hasNextPage {
 		page++
-		res := &struct{ Organization Organization }{}
+		res := &struct {
+			Organization Organization
+		}{}
 
 		req.Var("after", next)
 
 		if err := c.Run(req, &res); err != nil {
 			return nil, errors.Wrap(err, "failed to fetch members for organisation")
 		}
+
 		users = append(users, res.Organization.MembersWithRole.Edges...)
 		next = &res.Organization.MembersWithRole.PageInfo.EndCursor
 		hasNextPage = res.Organization.MembersWithRole.PageInfo.HasNextPage

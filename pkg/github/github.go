@@ -18,22 +18,22 @@ type (
 	}
 )
 
-// Various fixed values for interacting with the Github graphql api
-const (
-	APIURL = "https://api.github.com/graphql"
+var (
+	// GithubAPIURL is the default api endpoint
+	GithubAPIURL = "https://api.github.com/graphql"
 )
 
 // Client wraps a graphql client for communicating with the Github API
 type Client struct {
-	token  string
-	client *graphql.Client
+	token string
+	q     *graphql.Client
 }
 
 // NewClient instansiates a new graphql client
 func NewClient(token string) *Client {
 	return &Client{
-		token:  token,
-		client: graphql.NewClient(APIURL),
+		token: token,
+		q:     graphql.NewClient(GithubAPIURL),
 	}
 }
 
@@ -41,5 +41,7 @@ func NewClient(token string) *Client {
 // authentication headers and background context
 func (c Client) Run(request *graphql.Request, response interface{}) error {
 	request.Header.Set("Authorization", "bearer "+c.token)
-	return c.client.Run(context.Background(), request, response)
+	ctx := context.Background()
+	err := c.q.Run(ctx, request, response)
+	return err
 }
