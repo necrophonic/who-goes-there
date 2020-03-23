@@ -2,46 +2,41 @@ package main
 
 import (
 	"context"
-	"encoding/json"
-	"log"
 	"os"
 
 	"github.com/ONSdigital/who-goes-there/pkg/github"
 	"github.com/ONSdigital/who-goes-there/pkg/report"
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-lambda-go/lambda"
-	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/aws/session"
-	"github.com/aws/aws-sdk-go/service/sqs"
 	"github.com/pkg/errors"
 )
 
 // Handler recieves a CloudWatch Event and triggers the rules engine
-func Handler(ctx context.Context, cwEvent events.CloudWatchEvent) error {
+func Handler(ctx context.Context, cwEvent events.CloudWatchEvent) (*report.Report, error) {
 
 	queueURL := os.Getenv("QUEUE_URL")
 	if queueURL == "" {
-		return errors.New("missing QUEUE_URL")
+		return nil, errors.New("missing QUEUE_URL")
 	}
 
 	token := os.Getenv("API_TOKEN")
 	if token == "" {
-		return errors.New("missing API_TOKEN")
+		return nil, errors.New("missing API_TOKEN")
 	}
 
 	organisation := os.Getenv("GITHUB_ORG_NAME")
 	if organisation == "" {
-		return errors.New("missing GITHUB_ORG_NAME")
+		return nil, errors.New("missing GITHUB_ORG_NAME")
 	}
 
 	client := github.NewClient(token)
 	users, err := client.FetchOrganizationMembers(organisation)
 	if err != nil {
-		return errors.Wrap(err, "failed to retrieve members")
+		return nil, errors.Wrap(err, "failed to retrieve members")
 	}
 
 	if os.Getenv("REPORT_RECIPIENT") == "" || os.Getenv("REPORT_SENDER") == "" {
-		return errors.New("Missing sender and recipient")
+		return nil, errors.New("Missing sender and recipient")
 	}
 
 	report := report.Report{}
@@ -59,38 +54,38 @@ func Handler(ctx context.Context, cwEvent events.CloudWatchEvent) error {
 		}
 	}
 
-	sess := session.New()
-	svc := sqs.New(sess)
+	// sess := session.New()
+	// svc := sqs.New(sess)
 
-	rj, err := json.Marshal(report)
-	if err != nil {
-		return errors.Wrap(err, "failed to marshal reports")
-	}
+	// rj, err := json.Marshal(report)
+	// if err != nil {
+	// 	return nil, errors.Wrap(err, "failed to marshal reports")
+	// }
 
-	result, err := svc.SendMessage(&sqs.SendMessageInput{
-		MessageAttributes: map[string]*sqs.MessageAttributeValue{
-			"Title": &sqs.MessageAttributeValue{
-				DataType:    aws.String("String"),
-				StringValue: aws.String("W"),
-			},
-		},
-		MessageBody: aws.String(string(rj)),
-		QueueUrl:    &queueURL,
-	})
+	// result, err := svc.SendMessage(&sqs.SendMessageInput{
+	// 	MessageAttributes: map[string]*sqs.MessageAttributeValue{
+	// 		"Title": &sqs.MessageAttributeValue{
+	// 			DataType:    aws.String("String"),
+	// 			StringValue: aws.String("W"),
+	// 		},
+	// 	},
+	// 	MessageBody: aws.String(string(rj)),
+	// 	QueueUrl:    &queueURL,
+	// })
 
-	if err != nil {
-		return errors.Wrap(err, "failed to send report message")
-	}
-	log.Println("Successfully published message:", *result.MessageId)
+	// if err != nil {
+	// 	return nil, errors.Wrap(err, "failed to send report message")
+	// }
+	// log.Println("Successfully published message:", *result.MessageId)
 
-	return nil
+	return &report, nil
 }
 
 // func sendReportMessage(r *report.Report) error {
 
 // 	rj, err := json.Marshal(r)
 // 	if err != nil {
-// 		return errors.Wrap(err, "failed to marshal reports")
+// 		return nil, errors.Wrap(err, "failed to marshal reports")
 // 	}
 
 // 	log.Println(rj)
@@ -137,11 +132,11 @@ func Handler(ctx context.Context, cwEvent events.CloudWatchEvent) error {
 // 		if aerr, ok := err.(awserr.Error); ok {
 // 			switch aerr.Code() {
 // 			case ses.ErrCodeMessageRejected:
-// 				return errors.Wrap(aerr, ses.ErrCodeMessageRejected)
+// 				return nil, errors.Wrap(aerr, ses.ErrCodeMessageRejected)
 // 			case ses.ErrCodeMailFromDomainNotVerifiedException:
-// 				return errors.Wrap(aerr, ses.ErrCodeMailFromDomainNotVerifiedException)
+// 				return nil, errors.Wrap(aerr, ses.ErrCodeMailFromDomainNotVerifiedException)
 // 			case ses.ErrCodeConfigurationSetDoesNotExistException:
-// 				return errors.Wrap(aerr, ses.ErrCodeConfigurationSetDoesNotExistException)
+// 				return nil, errors.Wrap(aerr, ses.ErrCodeConfigurationSetDoesNotExistException)
 // 			default:
 // 				return aerr
 // 			}
@@ -151,7 +146,7 @@ func Handler(ctx context.Context, cwEvent events.CloudWatchEvent) error {
 // 			log.Println(err.Error())
 // 		}
 
-// 		return err
+// 		return nil, err
 // 	}
 // 	return nil
 // }

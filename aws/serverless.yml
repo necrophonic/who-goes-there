@@ -19,8 +19,13 @@ provider:
     GITHUB_ORG_NAME: onsdigital
     REPOSITORY: people
     API_TOKEN: ${env:API_TOKEN} # TODO Ideally in secrets manager
-    REPORT_RECIPIENT: john@johngregory.me.uk
-    REPORT_SENDER: john.gregory@ons.gov.uk
+    
+    QUEUE_URL:
+      !Ref reportQueue
+    QUEUE_ARN:
+      Fn::GetAtt:
+        - reportQueue
+        - Arn
 
 package:
   exclude:
@@ -33,10 +38,7 @@ functions:
     description: Runs periodic scans of github via the graphql api to audit members against a defined ruleset
     role: checkerRole
     handler: bin/checker
-    memorySize: 128    
-    environment:
-      QUEUE_URL:
-        !Ref reportQueue
+    memorySize: 128
     events:
     - schedule:
         # Run 00:10 every monday
@@ -51,10 +53,8 @@ functions:
     memorySize: 128
     events:
       - sqs:
-          arn:
-            Fn::GetAtt:
-              - reportQueue
-              - Arn
+          arn: ${self:provider.environment.QUEUE_ARN}
+            
 
 policies:
   xrayPolicy: &xrayPolicy
@@ -106,6 +106,8 @@ resources:
               Statement:
                 - <<: *xrayPolicy
                 - <<: *loggingPolicy
+
+                # ???
                 - Effect: Allow
                   Action:
                     - sqs:SendMessage
@@ -133,6 +135,13 @@ resources:
               Statement:
               - <<: *xrayPolicy
               - <<: *loggingPolicy
+              - Effect: Allow
+                Action:
+                  - sqs:ReceiveMessage
+                  - sqs:DeleteMessage
+                  - sqs:GetQueueAttributes
+                Resource:
+                  - ${self:provider.environment.QUEUE_ARN}
               - Effect: Allow
                 Action:
                   - ses:SendEmail
