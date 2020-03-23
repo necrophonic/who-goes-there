@@ -1,0 +1,117 @@
+service: whogoesthere
+
+# You can pin your service to only deploy with a specific Serverless version
+# Check out our docs for more details
+# frameworkVersion: "=X.X.X"
+frameworkVersion: '>=1.28.0 <2.0.0'
+
+provider:
+  name: aws
+  runtime: go1.x
+  region: eu-west-2
+
+  # Tracing plugin - serverless-plugin-tracing
+  tracing: 
+    lambda: true
+
+# you can define service wide environment variables here
+  environment:
+    GITHUB_ORG_NAME: onsdigital
+    REPOSITORY: people
+    API_TOKEN: ${env:API_TOKEN} # TODO Ideally in secrets manager
+    REPORT_RECIPIENT: john@johngregory.me.uk
+    REPORT_SENDER: john.gregory@ons.gov.uk
+
+package:
+  exclude:
+    - ./**
+  include:
+    - ./bin/**
+
+functions:
+  checker:
+    description: Runs periodic scans of github via the graphql api to audit members against a defined ruleset
+    role: checkerRole
+    handler: bin/checker
+    memorySize: 128
+    environment:
+      QUEUE_URL:
+        !Ref reportQueue
+    events:
+    - schedule:
+        # Run 00:10 every monday
+        rate: cron(0/10 * * * ? *) #TODO get the schedule right!
+        enabled: true
+
+  notifier:
+    description: Receives reports from the checker and emails alerts via SES
+    handler: bin/notifier
+    memorySize: 128
+    events:
+      - sqs:
+          arn:
+            Fn::GetAtt:
+              - reportQueue
+              - Arn
+      
+resources:
+  Resources:
+
+    reportQueue:
+      Type: "AWS::SQS::Queue"
+      Properties:
+        QueueName: "ReportQueue"
+
+    checkerRole:
+      Type: AWS::IAM::Role
+      Properties:
+        Path: /wgt/checker/path/
+        AssumeRolePolicyDocument:
+          Version: '2012-10-17'
+          Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+              - lambda.amazonaws.com
+            Action: sts:AssumeRole
+        Policies:
+          - PolicyName: myPolicyName
+            PolicyDocument:
+              Version: '2012-10-17'
+              Statement:
+                # X ray tracing
+                - Effect: "Allow" # xray permissions (required)
+                  Action:
+                    - "xray:PutTraceSegments"
+                    - "xray:PutTelemetryRecords"
+                  Resource:
+                    - "*"
+                # SQS Sending permissions
+                - Effect: Allow
+                  Action:
+                    - sqs:SendMessage
+                  Resource:
+                    - Fn::GetAtt:
+                      - reportQueue
+                      - Arn
+                # Logging
+                - Effect: Allow
+                  Action:
+                    - logs:CreateLogGroup
+                    - logs:CreateLogStream
+                    - logs:PutLogEvents
+                  Resource:
+                    - 'Fn::Join':
+                      - ':'
+                      -
+                        - 'arn:aws:logs'
+                        - Ref: 'AWS::Region'
+                        - Ref: 'AWS::AccountId'
+                        - 'log-group:/aws/lambda/*:*:*'
+                # SES Sending permissions
+                # - Effect: Allow
+                #   Action:
+                #     - "ses:SendEmail"
+                #     - "ses:SendRawEmail"
+                #   Resource:
+                #     - "*"

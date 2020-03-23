@@ -13,26 +13,29 @@ type (
 		MembersWithRole struct {
 			TotalCount int
 			PageInfo   PageInfo
-			Edges      []User
+			Edges      []OrganizationMemberEdge
 		}
+	}
+
+	// OrganizationMemberEdge represents a user edge
+	OrganizationMemberEdge struct {
+		HasTwoFactorEnabled bool
+		Role                string
+		Node                User
 	}
 
 	// User represents the information returned for a specific user
 	User struct {
-		HasTwoFactorEnabled bool
-		Role                string
-		Node                struct {
-			Name  string
-			Login string
-		}
+		Name  string
+		Login string
 	}
 )
 
 // FetchOrganizationMembers performs a graphql query to fetch the member information
 // for a given organization
-func (c *Client) FetchOrganizationMembers(org string) ([]User, error) {
+func (c *Client) FetchOrganizationMembers(org string) ([]OrganizationMemberEdge, error) {
 
-	var users []User
+	var users []OrganizationMemberEdge
 	var next *string // Allow it to be nil
 
 	req := graphql.NewRequest(`
