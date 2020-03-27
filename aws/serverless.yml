@@ -16,10 +16,6 @@ provider:
 
 # you can define service wide environment variables here
   environment:
-    GITHUB_ORG_NAME: onsdigital
-    REPOSITORY: people
-    API_TOKEN: ${env:API_TOKEN} # TODO Ideally in secrets manager
-    
     QUEUE_URL:
       !Ref reportQueue
     QUEUE_ARN:
@@ -40,11 +36,16 @@ functions:
     handler: bin/checker
     memorySize: 128
     events:
-    - schedule:
-        # Run 00:10 every monday
-        rate: cron(0/10 * * * ? *) #TODO get the schedule right!
-        enabled: true
-    
+      - schedule:
+          # Run 00:10 every monday
+          rate: cron(0/5 * * * ? *) #TODO get the schedule right!
+          enabled: true
+    environment:
+      GITHUB_ORGANISATION: ${env:GITHUB_ORGANISATION}
+      GITHUB_REPOSITORY: ${env:GITHUB_REPOSITORY}
+      GITHUB_TOKEN: ${env:GITHUB_TOKEN} # TODO Ideally in secrets manager
+    destinations:
+      onSuccess: ${self:provider.environment.QUEUE_ARN}
 
   notifier:
     description: Receives reports from the checker and emails alerts via SES
@@ -54,7 +55,8 @@ functions:
     events:
       - sqs:
           arn: ${self:provider.environment.QUEUE_ARN}
-            
+    environment:
+      NOTIFY_FROM: ${env:NOTIFY_FROM}
 
 policies:
   xrayPolicy: &xrayPolicy
@@ -106,15 +108,11 @@ resources:
               Statement:
                 - <<: *xrayPolicy
                 - <<: *loggingPolicy
-
-                # ???
                 - Effect: Allow
                   Action:
                     - sqs:SendMessage
                   Resource:
-                    - Fn::GetAtt:
-                      - reportQueue
-                      - Arn
+                    - ${self:provider.environment.QUEUE_ARN}
 
     notifierRole:
       Type: AWS::IAM::Role
