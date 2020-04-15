@@ -24,6 +24,45 @@ The github access token for using this service requires the following scopes:
 | `GITHUB_ORG_NAME` | `-o`     | _none_  | The name of the Github organisation to scan (token above must have permission on this org) |
 | `REPOSITORY`      | `-r`     | _none_  | The name of the repository to hold people detail and raise compliance issues on            |
 
+If using Slack notifications, the following is required"
+
+| Environment Var | Cli Flag | Default | Description                                                                             |
+| --------------- | -------- | ------- | --------------------------------------------------------------------------------------- |
+| `WEBHOOK_URL`   | n/a      | _none_  | Used to specify the webhook endpoint as given to you by slack when creating the webhook |
+
+## Deploying
+
+Uses the [serverless framework](https://serverless.com) to deploy to cloud platforms
+
+To deploy the default stack (AWS):
+
+```bash
+# Export AWS credentials / set profile
+# ...
+
+# Export necessary environment vars
+# ...
+
+cd aws
+make deploy
+```
+
+## Notification config
+
+TODO
+
+### Slack
+
+TODO
+
+#### Goper codes
+
+Some pre-spec'd avatars for your bot, from the awesome [Gopherize.me](gopherize.me)
+
+- [Mechanic Gopher](resources/images/mechanic_gopher.png)
+
+![Mechanic Gopher](resources/images/mechanic_gopher.png =250x250) (gopherize id: 6d2e08c34c63c0bc77160a263a0f98f4d60c41ea)
+
 ## License
 
 Copyright (c) 2019 Crown Copyright (Office for National Statistics)

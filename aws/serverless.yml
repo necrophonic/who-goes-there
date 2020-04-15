@@ -47,16 +47,17 @@ functions:
     destinations:
       onSuccess: ${self:provider.environment.QUEUE_ARN}
 
-  notifier:
-    description: Receives reports from the checker and emails alerts via SES
+  # Optional components
+  notifierSlack:
+    description:  Receives reports from the checker and fires an alert to a slack channel
     role: notifierRole
-    handler: bin/notifier
+    handler: bin/notifier-slack
     memorySize: 128
     events:
       - sqs:
           arn: ${self:provider.environment.QUEUE_ARN}
     environment:
-      NOTIFY_FROM: ${env:NOTIFY_FROM}
+      WEBHOOK_URL: ${env:WEBHOOK_URL}
 
 policies:
   xrayPolicy: &xrayPolicy
@@ -140,8 +141,3 @@ resources:
                   - sqs:GetQueueAttributes
                 Resource:
                   - ${self:provider.environment.QUEUE_ARN}
-              - Effect: Allow
-                Action:
-                  - ses:SendEmail
-                  - ses:SendRawEmail
-                Resource: "*"

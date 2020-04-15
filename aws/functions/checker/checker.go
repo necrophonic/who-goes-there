@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"log"
+	"time"
 
 	"github.com/ONSdigital/who-goes-there/pkg/github"
 	"github.com/ONSdigital/who-goes-there/pkg/report"
@@ -34,7 +35,9 @@ func Handler(ctx context.Context, cwEvent events.CloudWatchEvent) (*report.Repor
 		return nil, errors.Wrap(err, "failed to retrieve members")
 	}
 
-	report := report.Report{}
+	report := report.Report{
+		Generated: time.Now(),
+	}
 
 	for _, user := range users {
 		report.Summary.TotalUsers++
@@ -49,7 +52,7 @@ func Handler(ctx context.Context, cwEvent events.CloudWatchEvent) (*report.Repor
 		}
 	}
 
-	// This service is defined with a destination that puts our response onto
+	// This service is defined with a 'destination' that puts our response onto
 	// an SQS queue. The content of *report gets automatically unrolled into
 	// the SQS payload.
 	// This means we don't need to manually connect to and send the message to
