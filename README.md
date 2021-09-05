@@ -55,7 +55,7 @@ TODO
 
 TODO
 
-#### Goper codes
+#### Gopher codes
 
 Some pre-spec'd avatars for your bot, from the awesome [Gopherize.me](gopherize.me)
 

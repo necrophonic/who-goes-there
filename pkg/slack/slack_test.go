@@ -12,10 +12,7 @@ func TestMarshal(t *testing.T) {
 	is := is.New(t)
 
 	sm := slack.Message{
-		Text: &slack.MessageBlockText{
-			Type: slack.FormatPlainText,
-			Text: "Who Goes There report",
-		},
+		Text: "Who Goes There report",
 		Blocks: []*slack.MessageBlock{
 			{
 				Type: slack.SectionBlock,

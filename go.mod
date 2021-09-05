@@ -1,6 +1,6 @@
 module github.com/ONSdigital/who-goes-there
 
-go 1.14
+go 1.17
 
 require (
 	github.com/aws/aws-lambda-go v1.14.1
@@ -11,4 +11,10 @@ require (
 	github.com/pkg/errors v0.9.1
 	github.com/urfave/cli/v2 v2.1.1
 	gopkg.in/yaml.v2 v2.2.2
+)
+
+require (
+	github.com/cpuguy83/go-md2man/v2 v2.0.0-20190314233015-f79a8a8ca69d // indirect
+	github.com/russross/blackfriday/v2 v2.0.1 // indirect
+	github.com/shurcooL/sanitized_anchor_name v1.0.0 // indirect
 )
