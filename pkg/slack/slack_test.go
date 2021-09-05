@@ -4,12 +4,10 @@ import (
 	"testing"
 
 	"github.com/ONSdigital/who-goes-there/pkg/slack"
-	"github.com/matryer/is"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestMarshal(t *testing.T) {
-
-	is := is.New(t)
 
 	sm := slack.Message{
 		Text: "Who Goes There report",
@@ -36,9 +34,9 @@ func TestMarshal(t *testing.T) {
 		},
 	}
 
-	expected := []byte(`{"text":{"type":"plain_text","text":"Who Goes There report"},"blocks":[{"type":"section","text":{"type":"mrkdwn","text":"Here's your report from the recent run of _Who Goes There?_"}},{"type":"divider"},{"type":"context","elements":[{"type":"mrkdwn","text":"This is your report detail"}]}]}`)
+	expected := `{"text":"Who Goes There report","blocks":[{"type":"section","text":{"type":"mrkdwn","text":"Here's your report from the recent run of _Who Goes There?_"}},{"type":"divider"},{"type":"context","elements":[{"type":"mrkdwn","text":"This is your report detail"}]}]}`
 
 	marshaled, err := sm.Marshal()
-	is.NoErr(err)
-	is.Equal(marshaled, expected)
+	assert.NoError(t, err)
+	assert.JSONEq(t, expected, string(marshaled))
 }

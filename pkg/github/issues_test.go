@@ -8,12 +8,10 @@ import (
 	"testing"
 
 	"github.com/ONSdigital/who-goes-there/pkg/github"
-	"github.com/matryer/is"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestFetchAllOpenIssuesBadResponse(t *testing.T) {
-
-	is := is.New(t)
 
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		io.WriteString(w, `xxx`)
@@ -26,5 +24,5 @@ func TestFetchAllOpenIssuesBadResponse(t *testing.T) {
 	client := github.NewClient("SomeFakeToken")
 
 	_, err := client.FetchAllOpenIssues("me", "my-org")
-	is.True(strings.Contains(err.Error(), "invalid character 'x' looking for beginning of value"))
+	assert.True(t, strings.Contains(err.Error(), "invalid character 'x' looking for beginning of value"))
 }
