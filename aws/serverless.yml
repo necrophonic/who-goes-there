@@ -9,6 +9,7 @@ provider:
   name: aws
   runtime: go1.x
   region: eu-west-2
+  lambdaHashingVersion: 20201221
 
   # Tracing plugin - serverless-plugin-tracing
   tracing: 
