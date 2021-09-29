@@ -14,17 +14,14 @@ provider:
   lambdaHashingVersion: 20201221
 
   # Tracing plugin - serverless-plugin-tracing
-  tracing: 
+  tracing:
     lambda: true
 
-# you can define service wide environment variables here
+  # you can define service wide environment variables here
   environment:
-    QUEUE_URL:
-      !Ref reportQueue
-    QUEUE_ARN:
-      Fn::GetAtt:
-        - reportQueue
-        - Arn
+    QUEUE_URL: !Ref reportQueue
+    QUEUE_NAME: ReportQueue
+    QUEUE_ARN: arn:aws:sqs:${self:provider.region}:${aws:accountId}:${self:provider.environment.QUEUE_NAME}
 
 package:
   patterns:
@@ -51,7 +48,7 @@ functions:
 
   # Optional components
   notifierSlack:
-    description:  Receives reports from the checker and fires an alert to a slack channel
+    description: Receives reports from the checker and fires an alert to a slack channel
     role: notifierRole
     handler: bin/notifier-slack
     memorySize: 128
@@ -61,36 +58,12 @@ functions:
     environment:
       WEBHOOK_URL: ${env:WEBHOOK_URL}
 
-policies:
-  xrayPolicy: &xrayPolicy
-    - Effect: "Allow" # xray permissions (required)
-      Action:
-        - "xray:PutTraceSegments"
-        - "xray:PutTelemetryRecords"
-      Resource:
-        - "*"
-  loggingPolicy: &loggingPolicy
-    - Effect: Allow
-      Action:
-        - logs:CreateLogGroup
-        - logs:CreateLogStream
-        - logs:PutLogEvents
-      Resource:
-        - 'Fn::Join':
-          - ':'
-          -
-            - 'arn:aws:logs'
-            - Ref: 'AWS::Region'
-            - Ref: 'AWS::AccountId'
-            - 'log-group:/aws/lambda/*:*:*'
-
 resources:
   Resources:
-
     reportQueue:
-      Type: "AWS::SQS::Queue"
+      Type: 'AWS::SQS::Queue'
       Properties:
-        QueueName: "ReportQueue"
+        QueueName: ${self:provider.environment.QUEUE_NAME}
 
     checkerRole:
       Type: AWS::IAM::Role
@@ -109,11 +82,27 @@ resources:
             PolicyDocument:
               Version: '2012-10-17'
               Statement:
-                - <<: *xrayPolicy
-                - <<: *loggingPolicy
+                - Effect: 'Allow' # xray permissions (required)
+                  Action:
+                    - 'xray:PutTraceSegments'
+                    - 'xray:PutTelemetryRecords'
+                  Resource:
+                    - '*'
                 - Effect: Allow
                   Action:
-                    - sqs:SendMessage
+                    - logs:CreateLogGroup
+                    - logs:CreateLogStream
+                    - logs:PutLogEvents
+                  Resource:
+                    - 'Fn::Join':
+                        - ':'
+                        - - 'arn:aws:logs'
+                          - Ref: 'AWS::Region'
+                          - Ref: 'AWS::AccountId'
+                          - 'log-group:/aws/lambda/*:*:*'
+                - Effect: Allow
+                  Action:
+                    - 'sqs:SendMessage'
                   Resource:
                     - ${self:provider.environment.QUEUE_ARN}
 
@@ -134,12 +123,28 @@ resources:
             PolicyDocument:
               Version: '2012-10-17'
               Statement:
-              - <<: *xrayPolicy
-              - <<: *loggingPolicy
-              - Effect: Allow
-                Action:
-                  - sqs:ReceiveMessage
-                  - sqs:DeleteMessage
-                  - sqs:GetQueueAttributes
-                Resource:
-                  - ${self:provider.environment.QUEUE_ARN}
+                - Effect: 'Allow' # xray permissions (required)
+                  Action:
+                    - 'xray:PutTraceSegments'
+                    - 'xray:PutTelemetryRecords'
+                  Resource:
+                    - '*'
+                - Effect: Allow
+                  Action:
+                    - logs:CreateLogGroup
+                    - logs:CreateLogStream
+                    - logs:PutLogEvents
+                  Resource:
+                    - 'Fn::Join':
+                        - ':'
+                        - - 'arn:aws:logs'
+                          - Ref: 'AWS::Region'
+                          - Ref: 'AWS::AccountId'
+                          - 'log-group:/aws/lambda/*:*:*'
+                - Effect: Allow
+                  Action:
+                    - 'sqs:ReceiveMessage'
+                    - 'sqs:DeleteMessage'
+                    - 'sqs:GetQueueAttributes'
+                  Resource:
+                    - ${self:provider.environment.QUEUE_ARN}
