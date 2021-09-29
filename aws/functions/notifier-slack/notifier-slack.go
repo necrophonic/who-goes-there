@@ -37,10 +37,6 @@ func handler(ctx context.Context, sqsEvent events.SQSEvent) error {
 	}
 
 	for _, message := range sqsEvent.Records {
-
-		log.Println("Received report")
-		log.Println(message.Body)
-
 		var m messageBody
 		err := json.Unmarshal([]byte(message.Body), &m)
 		if err != nil {
@@ -49,32 +45,40 @@ func handler(ctx context.Context, sqsEvent events.SQSEvent) error {
 
 		r := m.ResponsePayload
 
-		err = postSlackMessage(
-			ctx,
-			s,
-			slack.Message{
-				Text: "New report from Who Goes There",
-				Blocks: []*slack.MessageBlock{
-					{
-						Type: slack.SectionBlock,
-						Text: &slack.MessageBlockText{
-							Type: slack.FormatMarkdown,
-							Text: "Here's your report from the recent run of _Who Goes There?_",
-						},
+		message := slack.Message{
+			Text: "New report from Who Goes There",
+			Blocks: []*slack.MessageBlock{
+				{
+					Type: slack.HeaderBlock,
+					Text: &slack.MessageBlockText{
+						Type: slack.FormatMarkdown,
+						Text: "Here's your report from the recent run of _Who Goes There?_",
 					},
-					{
-						Type: slack.ContextBlock,
-						Elements: []*slack.MessageBlockText{
-							{
-								Type: slack.FormatMarkdown,
-								Text: fmt.Sprintf("report generated at %s", r.Generated),
-							},
+				},
+				{
+					Type: slack.DividerBlock,
+				},
+				{
+					Type: slack.SectionBlock,
+					Text: &slack.MessageBlockText{
+						Type: slack.FormatMarkdown,
+						Text: r.SummaryTableMarkdown(),
+					},
+				},
+				{
+					Type: slack.ContextBlock,
+					Elements: []*slack.MessageBlockText{
+						{
+							Type: slack.FormatMarkdown,
+							Text: fmt.Sprintf("report generated at %s", r.Generated),
 						},
 					},
 				},
 			},
-		)
-		if err != nil {
+		}
+
+		// TODO refactor url call
+		if err := message.Post(ctx, s.URL); err != nil {
 			return errors.Wrap(err, "failed to post slack message")
 		}
 	}
@@ -91,8 +95,6 @@ func postSlackMessage(ctx context.Context, s WebhookSpec, msg slack.Message) err
 	if err != nil {
 		return err
 	}
-
-	log.Println(string(data))
 
 	req, err := http.NewRequestWithContext(
 		ctx,

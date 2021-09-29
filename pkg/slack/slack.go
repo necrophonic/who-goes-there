@@ -1,18 +1,29 @@
 package slack
 
 import (
+	"bytes"
+	"context"
 	"encoding/json"
+	"fmt"
+	"io/ioutil"
+	"log"
+	"net/http"
+	"time"
 
 	"github.com/pkg/errors"
 )
 
+var client *http.Client
+
 type (
+	// Using some custom types for syntactic sugar purposes
 	blockType  string
 	formatType string
 )
 
 // Types of blocks
 const (
+	HeaderBlock  blockType = "header"
 	SectionBlock blockType = "section"
 	DividerBlock blockType = "divider"
 	ContextBlock blockType = "context"
@@ -61,4 +72,46 @@ func (m Message) Marshal() ([]byte, error) {
 		return nil, errors.Wrap(err, "failed to marshal slack message")
 	}
 	return data, nil
+}
+
+func (m Message) Post(ctx context.Context, webhookURL string) error {
+	if client == nil {
+		client = &http.Client{
+			Timeout: time.Second * 5,
+		}
+	}
+
+	data, err := m.Marshal()
+	if err != nil {
+		return err
+	}
+
+	log.Printf("Posting slack message body: %s", string(data))
+
+	req, err := http.NewRequestWithContext(
+		ctx,
+		http.MethodPost,
+		webhookURL,
+		bytes.NewBuffer(data),
+	)
+	if err != nil {
+		return err
+	}
+
+	resp, err := client.Do(req)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != 200 {
+		e := fmt.Errorf("non-200 status returned from slack: %d", resp.StatusCode)
+
+		response, err := ioutil.ReadAll(resp.Body)
+		if err != nil {
+			return errors.WithMessagef(e, "error parsing response body: %v", err)
+		}
+		return errors.WithMessagef(e, "response: %s", response)
+	}
+	return nil
 }

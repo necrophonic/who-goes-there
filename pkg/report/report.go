@@ -20,3 +20,15 @@ type (
 		AdminUsersFailingRules int `json:"admin_users_failing"`
 	}
 )
+
+// SummaryTableMarkdown returns the report formatted as a basic markdown table
+func (r Report) SummaryTableMarkdown() string {
+	return "*This is your _summary_*"
+	// 	return `| abc | Count |
+	// |-------------------|---|
+	// | Total Users       | ` + strconv.Itoa(r.Summary.TotalUsers) + ` |
+	// | Users without MFA | ` + strconv.Itoa(r.Summary.UsersMissingMFA) + ` |
+	// | Admin Users       | ` + strconv.Itoa(r.Summary.AdminUsers) + `  |
+	// | Bad admin users   | ` + strconv.Itoa(r.Summary.AdminUsersFailingRules) + ` |
+	// `
+}
