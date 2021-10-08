@@ -18,11 +18,11 @@ The github access token for using this service requires the following scopes:
 
 ## Required config
 
-| Environment Var   | Cli Flag | Default | Description                                                                                |
-| ----------------- | -------- | ------- | ------------------------------------------------------------------------------------------ |
-| `API_TOKEN`       | `-t`     | _none_  | The API key to connect to github. Must have scopes as defined above                        |
-| `GITHUB_ORG_NAME` | `-o`     | _none_  | The name of the Github organisation to scan (token above must have permission on this org) |
-| `REPOSITORY`      | `-r`     | _none_  | The name of the repository to hold people detail and raise compliance issues on            |
+| Environment Var     | Cli Flag | Default | Description                                                                                |
+| ------------------- | -------- | ------- | ------------------------------------------------------------------------------------------ |
+| `GITHUB_TOKEN`      | `-t`     | _none_  | The API key to connect to github. Must have scopes as defined above                        |
+| `GITHUB_ORG_NAME`   | `-o`     | _none_  | The name of the Github organisation to scan (token above must have permission on this org) |
+| `GITHUB_REPOSITORY` | `-r`     | _none_  | The name of the repository to hold people detail and raise compliance issues on            |
 
 If using Slack notifications, the following is required"
 
