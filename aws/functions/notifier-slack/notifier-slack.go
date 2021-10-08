@@ -83,41 +83,6 @@ func handler(ctx context.Context, sqsEvent events.SQSEvent) error {
 	return nil
 }
 
-func postSlackMessage(ctx context.Context, s WebhookSpec, msg slack.Message) error {
-
-	client := &http.Client{
-		Timeout: time.Second * 5,
-	}
-
-	data, err := msg.Marshal()
-	if err != nil {
-		return err
-	}
-
-	req, err := http.NewRequestWithContext(
-		ctx,
-		http.MethodPost,
-		s.URL,
-		bytes.NewBuffer(data),
-	)
-	if err != nil {
-		return err
-	}
-
-	resp, err := client.Do(req)
-	if err != nil {
-		return err
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != 200 {
-		return fmt.Errorf("non-200 status returned from slack: %d", resp.StatusCode)
-	}
-
-	log.Println("All ok")
-	return nil
-}
-
 func main() {
 	lambda.Start(handler)
 }
