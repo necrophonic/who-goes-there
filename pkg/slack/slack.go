@@ -1,3 +1,7 @@
+// Package slack handles compiling messages and communicating with the Slack
+// messaging API.
+//
+// Messages are compiled from Slack Blocks: see https://api.slack.com/reference/block-kit/blocks
 package slack
 
 import (
@@ -47,10 +51,12 @@ type (
 	MessageBlock struct {
 		Type blockType `json:"type"`
 
-		// For Blocks of type "section", the following are defined:
+		// For Blocks of type "section",
+		// the following are defined:
 		Text *MessageBlockText `json:"text,omitempty"`
 
-		// For Blocks of type "context", the following are defined:
+		// For Blocks of type "context",
+		// the following are defined:
 		Elements []*MessageBlockText `json:"elements,omitempty"`
 	}
 
@@ -59,7 +65,8 @@ type (
 		Type formatType `json:"type"`
 		Text string     `json:"text"`
 
-		// When Type is "plain_text", the following are defined:
+		// When Type is "plain_text",
+		// the following are defined:
 		Emoji bool `json:"emoji,omitempty"`
 	}
 )
@@ -74,6 +81,8 @@ func (m Message) Marshal() ([]byte, error) {
 	return data, nil
 }
 
+// Post sends the message to a webhook URL. The URL contains the authentication
+// necessary to communicate with the service.
 func (m Message) Post(ctx context.Context, webhookURL string) error {
 	if client == nil {
 		client = &http.Client{

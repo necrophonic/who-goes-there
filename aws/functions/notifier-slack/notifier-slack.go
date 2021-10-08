@@ -1,13 +1,9 @@
 package main
 
 import (
-	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
-	"log"
-	"net/http"
-	"time"
 
 	"github.com/ONSdigital/who-goes-there/pkg/report"
 	"github.com/ONSdigital/who-goes-there/pkg/slack"
@@ -22,20 +18,22 @@ type WebhookSpec struct {
 	URL string
 }
 
-type (
-	messageBody struct {
-		ResponsePayload report.Report `json:"responsePayload"`
-	}
-)
+type messageBody struct {
+	// ResponsePayload is expected to be our shared report type
+	ResponsePayload report.Report `json:"responsePayload"`
+}
 
 func handler(ctx context.Context, sqsEvent events.SQSEvent) error {
 
+	// Import environment variables
 	var s WebhookSpec
 	err := envconfig.Process("WEBHOOK", &s)
 	if err != nil {
 		return err
 	}
 
+	// Ensure we process every incoming message as we could conceivably
+	// receive more than one as they may be batched.
 	for _, message := range sqsEvent.Records {
 		var m messageBody
 		err := json.Unmarshal([]byte(message.Body), &m)
@@ -45,6 +43,7 @@ func handler(ctx context.Context, sqsEvent events.SQSEvent) error {
 
 		r := m.ResponsePayload
 
+		// Build the slack API message body using Slack Blocks
 		message := slack.Message{
 			Text: "New report from Who Goes There",
 			Blocks: []*slack.MessageBlock{
@@ -77,7 +76,6 @@ func handler(ctx context.Context, sqsEvent events.SQSEvent) error {
 			},
 		}
 
-		// TODO refactor url call
 		if err := message.Post(ctx, s.URL); err != nil {
 			return errors.Wrap(err, "failed to post slack message")
 		}

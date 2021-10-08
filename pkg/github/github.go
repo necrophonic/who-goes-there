@@ -1,4 +1,4 @@
-// Package github defines the interface for interacting with the Github graphql api
+// Package github handles interacting with the Github graphql api
 package github
 
 import (
