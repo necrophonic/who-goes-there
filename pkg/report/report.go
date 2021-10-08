@@ -37,8 +37,8 @@ func New() *Report {
 func (r Report) SummaryTableMarkdown() string {
 	return markdownCodeDelimiter +
 		"Total Users       : " + strconv.Itoa(r.Summary.TotalUsers) +
-		"Users without MFA : " + strconv.Itoa(r.Summary.UsersMissingMFA) +
-		"Admin Users       : " + strconv.Itoa(r.Summary.AdminUsers) +
-		"Bad admin users   : " + strconv.Itoa(r.Summary.AdminUsersFailingRules) +
+		"\nUsers without MFA : " + strconv.Itoa(r.Summary.UsersMissingMFA) +
+		"\nAdmin Users       : " + strconv.Itoa(r.Summary.AdminUsers) +
+		"\nBad admin users   : " + strconv.Itoa(r.Summary.AdminUsersFailingRules) +
 		markdownCodeDelimiter
 }

@@ -50,8 +50,8 @@ func handler(ctx context.Context, sqsEvent events.SQSEvent) error {
 				{
 					Type: slack.HeaderBlock,
 					Text: &slack.MessageBlockText{
-						Type: slack.FormatMarkdown,
-						Text: "Here's your report from the recent run of _Who Goes There?_",
+						Type: slack.FormatPlainText,
+						Text: "Here's your report from the recent run of Who Goes There?",
 					},
 				},
 				{
