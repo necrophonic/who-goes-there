@@ -39,9 +39,8 @@ func NewClient(token string) *Client {
 
 // Run calls the underlying graphql.Run() and automatically adds in appropriate
 // authentication headers and background context
-func (c Client) Run(request *graphql.Request, response interface{}) error {
+func (c Client) Run(ctx context.Context, request *graphql.Request, response interface{}) error {
 	request.Header.Set("Authorization", "bearer "+c.token)
-	ctx := context.Background()
 	err := c.q.Run(ctx, request, response)
 	return err
 }

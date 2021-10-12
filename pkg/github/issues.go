@@ -1,6 +1,8 @@
 package github
 
 import (
+	"context"
+
 	"github.com/machinebox/graphql"
 	"github.com/pkg/errors"
 )
@@ -40,7 +42,7 @@ type (
 
 // FetchAllOpenIssues will return all the issues currently open on the
 // specified repository
-func (c *Client) FetchAllOpenIssues(owner, repo string) ([]Issue, error) {
+func (c *Client) FetchAllOpenIssues(ctx context.Context, owner, repo string) ([]Issue, error) {
 
 	var issues []Issue
 	var next *string // Allow it to be nil
@@ -83,7 +85,7 @@ func (c *Client) FetchAllOpenIssues(owner, repo string) ([]Issue, error) {
 
 		req.Var("after", next)
 
-		if err := c.Run(req, &res); err != nil {
+		if err := c.Run(ctx, req, &res); err != nil {
 			return nil, errors.Wrap(err, "failed to fetch issues for repo")
 		}
 		issues = append(issues, res.Repository.Issues.Nodes...)

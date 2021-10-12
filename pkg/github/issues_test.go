@@ -1,6 +1,7 @@
 package github_test
 
 import (
+	"context"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -23,6 +24,8 @@ func TestFetchAllOpenIssuesBadResponse(t *testing.T) {
 
 	client := github.NewClient("SomeFakeToken")
 
-	_, err := client.FetchAllOpenIssues("me", "my-org")
+	ctx := context.Background()
+
+	_, err := client.FetchAllOpenIssues(ctx, "me", "my-org")
 	assert.True(t, strings.Contains(err.Error(), "invalid character 'x' looking for beginning of value"))
 }

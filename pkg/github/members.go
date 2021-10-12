@@ -1,6 +1,8 @@
 package github
 
 import (
+	"context"
+
 	"github.com/machinebox/graphql"
 
 	"github.com/pkg/errors"
@@ -33,7 +35,7 @@ type (
 
 // FetchOrganizationMembers performs a graphql query to fetch the member information
 // for a given organization
-func (c *Client) FetchOrganizationMembers(org string) ([]OrganizationMemberEdge, error) {
+func (c *Client) FetchOrganizationMembers(ctx context.Context, org string) ([]OrganizationMemberEdge, error) {
 
 	var users []OrganizationMemberEdge
 	var next *string // Allow it to be nil
@@ -70,7 +72,7 @@ func (c *Client) FetchOrganizationMembers(org string) ([]OrganizationMemberEdge,
 
 		req.Var("after", next)
 
-		if err := c.Run(req, &res); err != nil {
+		if err := c.Run(ctx, req, &res); err != nil {
 			return nil, errors.Wrap(err, "failed to fetch members for organisation")
 		}
 

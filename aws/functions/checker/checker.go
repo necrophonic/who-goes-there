@@ -35,7 +35,7 @@ func Handler(ctx context.Context, cwEvent events.CloudWatchEvent) (*report.Repor
 
 	// Connect to github and fetch all the members for the configured organisation
 	client := github.NewClient(g.Token)
-	users, err := client.FetchOrganizationMembers(g.Organisation)
+	users, err := client.FetchOrganizationMembers(ctx, g.Organisation)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to retrieve members")
 	}

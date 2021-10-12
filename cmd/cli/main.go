@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"os"
@@ -67,8 +68,9 @@ func runCommand(c *cli.Context) error {
 	fmt.Printf("Org: %s\nRepo: %s\n", organisation, repository)
 
 	client := github.NewClient(token)
+	ctx := context.Background()
 
-	users, err := client.FetchOrganizationMembers(organisation)
+	users, err := client.FetchOrganizationMembers(ctx, organisation)
 	if err != nil {
 		log.Fatalf("Failed to retrieve members: %v", err)
 	}

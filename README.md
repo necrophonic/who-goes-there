@@ -2,6 +2,8 @@
 
 _Who Goes There_ is an application for managing membership of a github organisation and enforcing rules such as multi-factor authentication and naming policies
 
+Forked from https://github.com/onsdigital/who-goes-there
+
 ## Pre-requisites
 
 To use this tool, you need a repository (preferably _private_ or _internal_) created on your organisation that will hold sponsorship details for your org members and will hold compliance issues as they're raised
