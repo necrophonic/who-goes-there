@@ -23,3 +23,7 @@ _testmain.go
 *.test
 *.prof
 0
+
+.vscode
+
+.env

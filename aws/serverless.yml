@@ -1,0 +1,150 @@
+service: whogoesthere
+
+configValidationMode: error
+
+# You can pin your service to only deploy with a specific Serverless version
+# Check out our docs for more details
+# frameworkVersion: "=X.X.X"
+frameworkVersion: '>=2.0.0 <3.0.0'
+
+provider:
+  name: aws
+  runtime: go1.x
+  region: eu-west-2
+  lambdaHashingVersion: 20201221
+
+  # Tracing plugin - serverless-plugin-tracing
+  tracing:
+    lambda: true
+
+  # you can define service wide environment variables here
+  environment:
+    QUEUE_URL: !Ref reportQueue
+    QUEUE_NAME: ReportQueue
+    QUEUE_ARN: arn:aws:sqs:${self:provider.region}:${aws:accountId}:${self:provider.environment.QUEUE_NAME}
+
+package:
+  patterns:
+    - '!./**'
+    - './bin/**'
+
+functions:
+  checker:
+    description: Runs periodic scans of github via the graphql api to audit members against a defined ruleset
+    role: checkerRole
+    handler: bin/checker
+    memorySize: 128
+    events:
+      - schedule:
+          # Run 00:10 every monday
+          rate: cron(0/5 * * * ? *) #TODO get the schedule right!
+          enabled: true
+    environment:
+      GITHUB_ORGANISATION: ${env:GITHUB_ORGANISATION}
+      GITHUB_REPOSITORY: ${env:GITHUB_REPOSITORY}
+      GITHUB_TOKEN: ${env:GITHUB_TOKEN} # TODO Ideally in secrets manager
+    destinations:
+      onSuccess: ${self:provider.environment.QUEUE_ARN}
+
+  # Optional components
+  notifierSlack:
+    description: Receives reports from the checker and fires an alert to a slack channel
+    role: notifierRole
+    handler: bin/notifier-slack
+    memorySize: 128
+    events:
+      - sqs:
+          arn: ${self:provider.environment.QUEUE_ARN}
+    environment:
+      WEBHOOK_URL: ${env:WEBHOOK_URL}
+
+resources:
+  Resources:
+    reportQueue:
+      Type: 'AWS::SQS::Queue'
+      Properties:
+        QueueName: ${self:provider.environment.QUEUE_NAME}
+
+    checkerRole:
+      Type: AWS::IAM::Role
+      Properties:
+        Path: /wgt/checker/path/
+        AssumeRolePolicyDocument:
+          Version: '2012-10-17'
+          Statement:
+            - Effect: Allow
+              Principal:
+                Service:
+                  - lambda.amazonaws.com
+              Action: sts:AssumeRole
+        Policies:
+          - PolicyName: wgtCheckerPolicy
+            PolicyDocument:
+              Version: '2012-10-17'
+              Statement:
+                - Effect: 'Allow' # xray permissions (required)
+                  Action:
+                    - 'xray:PutTraceSegments'
+                    - 'xray:PutTelemetryRecords'
+                  Resource:
+                    - '*'
+                - Effect: Allow
+                  Action:
+                    - logs:CreateLogGroup
+                    - logs:CreateLogStream
+                    - logs:PutLogEvents
+                  Resource:
+                    - 'Fn::Join':
+                        - ':'
+                        - - 'arn:aws:logs'
+                          - Ref: 'AWS::Region'
+                          - Ref: 'AWS::AccountId'
+                          - 'log-group:/aws/lambda/*:*:*'
+                - Effect: Allow
+                  Action:
+                    - 'sqs:SendMessage'
+                  Resource:
+                    - ${self:provider.environment.QUEUE_ARN}
+
+    notifierRole:
+      Type: AWS::IAM::Role
+      Properties:
+        Path: /wgt/notifier/path/
+        AssumeRolePolicyDocument:
+          Version: '2012-10-17'
+          Statement:
+            - Effect: Allow
+              Principal:
+                Service:
+                  - lambda.amazonaws.com
+              Action: sts:AssumeRole
+        Policies:
+          - PolicyName: wgtNotifierPolicy
+            PolicyDocument:
+              Version: '2012-10-17'
+              Statement:
+                - Effect: 'Allow' # xray permissions (required)
+                  Action:
+                    - 'xray:PutTraceSegments'
+                    - 'xray:PutTelemetryRecords'
+                  Resource:
+                    - '*'
+                - Effect: Allow
+                  Action:
+                    - logs:CreateLogGroup
+                    - logs:CreateLogStream
+                    - logs:PutLogEvents
+                  Resource:
+                    - 'Fn::Join':
+                        - ':'
+                        - - 'arn:aws:logs'
+                          - Ref: 'AWS::Region'
+                          - Ref: 'AWS::AccountId'
+                          - 'log-group:/aws/lambda/*:*:*'
+                - Effect: Allow
+                  Action:
+                    - 'sqs:ReceiveMessage'
+                    - 'sqs:DeleteMessage'
+                    - 'sqs:GetQueueAttributes'
+                  Resource:
+                    - ${self:provider.environment.QUEUE_ARN}
